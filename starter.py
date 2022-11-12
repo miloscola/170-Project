@@ -8,6 +8,7 @@ import math
 from pathlib import Path
 from tqdm.auto import tqdm
 import tarfile
+import random
 
 # Scoring constants
 MAX_WEIGHT = 1000
@@ -153,3 +154,27 @@ def tar(out_dir, overwrite=False):
         'File already exists and overwrite set to False. Move file or set overwrite to True to proceed.'
     with tarfile.open(path, 'w') as fp:
         fp.add(out_dir)
+        
+def make_rand_graph(nodes, edges):
+    g = nx.gnm_random_graph(nodes, edges)
+    for (u, v) in g.edges:
+        g.edges[u,v]['weight'] = random.randint(1, 1000)
+    return g
+    
+
+def generate_inputs():
+    one_hundred_node = make_rand_graph(100, 1000)
+    validate_input(one_hundred_node)
+    three_hundred_node = make_rand_graph(300, 1000)
+    validate_input(three_hundred_node)
+    one_thousand_node = make_rand_graph(1000, 1000)
+    validate_input(one_thousand_node)
+
+    write_input(one_hundred_node, 'C:/Users/Milo/Documents/cs170/project/inputs/100_node.in', overwrite=True)
+    write_input(three_hundred_node, 'C:/Users/Milo/Documents/cs170/project/inputs/300_node.in', overwrite=True)
+    write_input(one_thousand_node, 'C:/Users/Milo/Documents/cs170/project/inputs/1000_node.in', overwrite=True)
+
+generate_inputs()    
+    
+        
+
