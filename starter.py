@@ -159,8 +159,7 @@ def make_rand_graph(nodes, edges):
     g = nx.gnm_random_graph(nodes, edges)
     for (u, v) in g.edges:
         g.edges[u,v]['weight'] = random.randint(1, 1000)
-    return g
-    
+    return g   
 
 def generate_inputs():
     one_hundred_node = make_rand_graph(100, 1000)
