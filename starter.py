@@ -150,7 +150,7 @@ def run_all(solver, in_dir, out_dir, overwrite: bool=False):
 
 def tar(out_dir, overwrite=False):
     path = f'{os.path.basename(out_dir)}.tar'
-    assert overwrite or not os.path.exists(path), \
+    assert overwrite or not os.path.exists(path), 
         'File already exists and overwrite set to False. Move file or set overwrite to True to proceed.'
     with tarfile.open(path, 'w') as fp:
         fp.add(out_dir)
@@ -173,7 +173,39 @@ def generate_inputs():
     write_input(three_hundred_node, 'C:/Users/Milo/Documents/cs170/project/inputs/300_node.in', overwrite=True)
     write_input(one_thousand_node, 'C:/Users/Milo/Documents/cs170/project/inputs/1000_node.in', overwrite=True)
 
-generate_inputs()    
-    
+#Simulated annealing alg: start off with penguins randomly devided into k teams evenly. Use
+#simulated annealing to optomize arangment. Run simulated anealing multiple times to look
+#at different graph sizes. Terminate poorly performing team numbers early
+
+#k = number of teams
+#pi = partition of penguins to teams (dict mapping vertex to team)
+#p = vector of team sizes (array with position 0 = size of team 1 ... etc)
+#C = cost of partition 
+#G = graph
+#t = number of time steps for simulated annealing to run
+#T_itter = iterator that returns next value of T
+def simulated_annealing(k, p, G, t, T_itter):
+    cur = G.copy()
+    C = score(cur)
+    for range(t):
+        #update temp
+        T = T_itter.next()
+        if T <= 0:
+            return cur
+        #randomly select new move
+        v = random.randint(0, G.size() - 1)
+        team = random.randint(1, k)
+        #ensure new team is diff from old team
+        while team == cur[v]['team']:
+            team = random.randint(1, k)
         
+        
+        
+
+
+
+
+
+
+
 
