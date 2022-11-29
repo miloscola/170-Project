@@ -150,7 +150,7 @@ def run_all(solver, in_dir, out_dir, overwrite: bool=False):
 
 def tar(out_dir, overwrite=False):
     path = f'{os.path.basename(out_dir)}.tar'
-    assert overwrite or not os.path.exists(path), 
+    assert overwrite or not os.path.exists(path), \
         'File already exists and overwrite set to False. Move file or set overwrite to True to proceed.'
     with tarfile.open(path, 'w') as fp:
         fp.add(out_dir)
@@ -187,7 +187,7 @@ def generate_inputs():
 def simulated_annealing(k, p, G, t, T_itter):
     cur = G.copy()
     C = score(cur)
-    for range(t):
+    for i in range(t):
         #update temp
         T = T_itter.next()
         if T <= 0:
