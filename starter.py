@@ -177,6 +177,25 @@ def generate_inputs():
 #simulated annealing to optomize arangment. Run simulated anealing multiple times to look
 #at different graph sizes. Terminate poorly performing team numbers early
 
+def update(G: nx.Graph, i, j, v, p):
+    #p is a list of team sizes
+    #i is team i
+    #j is team j
+    #v is vertex moving from i to j
+    #G is graph
+
+    b = np.linalg.norm((p / G.number_of_nodes()) - 1 / k, 2)
+    
+    biold = p[i] / G.number_of_nodes() - (1 / k)
+    bjold= p[j] / G.number_of_nodes() - (1 / k )
+    
+    binew = biold - (1/G.number_of_nodes())
+    bjnew = bjold - (1/G.number_of_nodes())
+    
+    cp = np.exp(70*sqrt((b**2)-(biold**2)-(bjold**2)-(binew**2)-(bjnew**2)))
+    return cp
+
+
 #k = number of teams
 #pi = partition of penguins to teams (dict mapping vertex to team)
 #p = vector of team sizes (array with position 0 = size of team 1 ... etc)
@@ -194,12 +213,45 @@ def simulated_annealing(k, p, G, t, T_itter):
             return cur
         #randomly select new move
         v = random.randint(0, G.size() - 1)
-        team = random.randint(1, k)
+        old_team = cur[v]['team']
+        new_team = random.randint(1, k)
         #ensure new team is diff from old team
-        while team == cur[v]['team']:
-            team = random.randint(1, k)
-        
-        
+        while new_team == old_team:
+            new_team = random.randint(1, k)
+        p[old_team - 1] -= 1
+        p[new_team - 1] += 1
+        new_C = dummy_update(v, old_team, new_team, p)
+        delta_C = new_C - C
+        if delta_C < 0:
+            cur[v]['tean'] = new_team
+            C = new_C
+        else:
+            if random.random() < math.exp(math.e, -1*delta_C/T):
+                cur[v]['tean'] = new_team
+                C = new_C
+            else:
+                p[old_team - 1] += 1
+                p[new_team - 1] -= 1
+        return (cur, C, p)
+
+#partitions: a list of arrays [number of partitions, p, graph, score]
+#time_iter: an iterator that returns the ammount of time spent on each recursive step
+#start_time: start time for temp iterator
+#T_itter_builter: returns an iterator that starts at time t
+def solve(partitions, time_iter, start_time, T_itter_builter):
+    time_steps = time_iter.next()
+    #run simulated annealing on each partition
+    for par in partitions:
+        SI = simulated_annealing(par[0], par[1], par[2], time_steps, T_itter_builter(start_time))
+    #if this is the last partition, return it
+    if len(partitions) == 1:
+        return partitions[0][2]
+    #remove the lower scoring half of the partitions
+    partitions.sort(key=lambda x: x[3])
+    half = partitions[len(partitions)/2:]
+    #recursively call solve until there are no 
+    return solve(half, time_iter, start_time + time_steps, T_itter_builter)
+    
         
 
 
