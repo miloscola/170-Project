@@ -177,6 +177,7 @@ def generate_inputs():
 #simulated annealing to optomize arangment. Run simulated anealing multiple times to look
 #at different graph sizes. Terminate poorly performing team numbers early
 
+"""
 def update(G: nx.Graph, i, j, v, p):
     #p is a list of team sizes
     #i is team i
@@ -194,21 +195,22 @@ def update(G: nx.Graph, i, j, v, p):
     
     cp = np.exp(70*sqrt((b**2)-(biold**2)-(bjold**2)-(binew**2)-(bjnew**2)))
     return cp
-
+"""
 
 #k = number of teams
 #pi = partition of penguins to teams (dict mapping vertex to team)
 #p = vector of team sizes (array with position 0 = size of team 1 ... etc)
 #C = cost of partition 
 #G = graph
-#t = number of time steps for simulated annealing to run
-#T_itter = iterator that returns next value of T
-def simulated_annealing(k, p, G, t, T_itter):
+#t_start = start time
+#t_end = end time
+#T_func = temprature function
+def simulated_annealing(k, p, G, t_start, t_end, T_func):
     cur = G.copy()
     C = score(cur)
-    for i in range(t):
+    for t in range(t_start, t_end):
         #update temp
-        T = T_itter.next()
+        T = T_func(t)
         if T <= 0:
             return cur
         #randomly select new move
@@ -220,16 +222,17 @@ def simulated_annealing(k, p, G, t, T_itter):
             new_team = random.randint(1, k)
         p[old_team - 1] -= 1
         p[new_team - 1] += 1
-        new_C = dummy_update(v, old_team, new_team, p)
+        cur[v]['team'] = new_team
+        new_C = score(cur)
         delta_C = new_C - C
-        if delta_C < 0:
-            cur[v]['tean'] = new_team
+        if delta_C < 0: 
             C = new_C
         else:
             if random.random() < math.exp(math.e, -1*delta_C/T):
-                cur[v]['tean'] = new_team
                 C = new_C
             else:
+                #change parameters back
+                cur[v]['team'] = old_team
                 p[old_team - 1] += 1
                 p[new_team - 1] -= 1
         return (cur, C, p)
@@ -237,12 +240,11 @@ def simulated_annealing(k, p, G, t, T_itter):
 #partitions: a list of arrays [number of partitions, p, graph, score]
 #time_iter: an iterator that returns the ammount of time spent on each recursive step
 #start_time: start time for temp iterator
-#T_itter_builter: returns an iterator that starts at time t
-def solve(partitions, time_iter, start_time, T_itter_builter):
-    time_steps = time_iter.next()
+def recurse(partitions, depth, t_start, t_func, T_func):
     #run simulated annealing on each partition
+    t_end = t_start + t_func(depth)
     for par in partitions:
-        SI = simulated_annealing(par[0], par[1], par[2], time_steps, T_itter_builter(start_time))
+        SI = simulated_annealing(par[0], par[1], par[2], t_start, t_end, T_func)
     #if this is the last partition, return it
     if len(partitions) == 1:
         return partitions[0][2]
@@ -250,12 +252,40 @@ def solve(partitions, time_iter, start_time, T_itter_builter):
     partitions.sort(key=lambda x: x[3])
     half = partitions[len(partitions)/2:]
     #recursively call solve until there are no 
-    return solve(half, time_iter, start_time + time_steps, T_itter_builter)
+    return recurse(half, depth + 1, t_end, t_func, T_func)
+
+def pre_set(G):
+    for v in G:
+        v['team'] = 1
+
+#TESTS
+def generate_test_graphs(nodes, num, dest):   
+    for i in range(num):
+        graph = make_rand_graph(nodes, 1000)
+        with open(dest + '/' + str(i) + '.in', 'w') as fp:
+            json.dump(nx.node_link_data(graph), fp)
     
-        
+#generate_test_graphs(100, 3, 'C:/Users/Milo/Documents/cs170/project/Test_Graphs/Large')        
 
+def sanity_check():
+    G = read_input('C:/Users/Milo/Documents/cs170/project/Test_Graphs/Large/0.in')
+    print('oringinial score is:')
+    print(score(G))
+    G1 = G.copy()
+    pre_set(G1)
+    G2 = G.copy()
+    pre_set(G2)
+    G3 = G.copy()
+    pre_set(G3)
+    partitions = [[2, [10, 0], G1, score(G1)], [3, [10, 0, 0], G2, score(G1)], 
+                  [4, [10, 0, 0, 0]], G3, score(G1)]
+    sol = recurse(partitions, 1, 1, lambda x: 100 * math.exp(2, 1 + .1 * x), 
+                  lambda x: 100 * math.exp(x, -1))
+    visualize(sol)
+    print('score is')
+    score(sol)
 
-
+sanity_check()
 
 
 
