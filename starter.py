@@ -177,14 +177,16 @@ def generate_inputs():
 #simulated annealing to optomize arangment. Run simulated anealing multiple times to look
 #at different graph sizes. Terminate poorly performing team numbers early
 
-"""
-def update(G: nx.Graph, i, j, v, p):
+
+def update(G: nx.Graph, i, j, v, p, cw):
     #p is a list of team sizes
     #i is team i
     #j is team j
     #v is vertex moving from i to j
     #G is graph
+    #cw is given
 
+    k = len(p)
     b = np.linalg.norm((p / G.number_of_nodes()) - 1 / k, 2)
     
     biold = p[i] / G.number_of_nodes() - (1 / k)
@@ -192,10 +194,17 @@ def update(G: nx.Graph, i, j, v, p):
     
     binew = biold - (1/G.number_of_nodes())
     bjnew = bjold - (1/G.number_of_nodes())
-    
-    cp = np.exp(70*sqrt((b**2)-(biold**2)-(bjold**2)-(binew**2)-(bjnew**2)))
-    return cp
-"""
+    cp = np.exp(70*math.sqrt((b**2)-(biold**2)-(bjold**2)-(binew**2)-(bjnew**2)))
+
+    v_adj = G.neighbors(v)
+    for neighbor in v_adj:
+        if G.nodes[neighbor]['team'] == i:
+            cw -= G.edges[v,neighbor]['weight']
+        elif G.nodes[neighbor]['team'] == i:
+            cw += G.edges[v,neighbor]['weight']
+
+    return cw+(100*math.exp(0.5*k))+cp
+
 
 #k = number of teams
 #pi = partition of penguins to teams (dict mapping vertex to team)
