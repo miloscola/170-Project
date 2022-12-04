@@ -205,58 +205,101 @@ def update(G: nx.Graph, i, j, v, p):
 #t_start = start time
 #t_end = end time
 #T_func = temprature function
-def simulated_annealing(k, p, G, t_start, t_end, T_func):
-    cur = G.copy()
-    C = score(cur)
-    for t in range(t_start, t_end):
-        #update temp
-        T = T_func(t)
+def simulated_annealing(k, p, G, t_end, T_start, T_dec):
+    C = score(G)
+    T = T_start
+    for t in range(t_end):
         if T <= 0:
-            return cur
+            return G
         #randomly select new move
-        v = random.randint(0, G.size() - 1)
-        old_team = cur[v]['team']
+        v = random.randint(0, len(G.nodes) - 1)
+        old_team = G.nodes[v]['team']
         new_team = random.randint(1, k)
         #ensure new team is diff from old team
         while new_team == old_team:
             new_team = random.randint(1, k)
         p[old_team - 1] -= 1
         p[new_team - 1] += 1
-        cur[v]['team'] = new_team
-        new_C = score(cur)
+        G.nodes[v]['team'] = new_team
+        new_C = score(G)
         delta_C = new_C - C
         if delta_C < 0: 
             C = new_C
         else:
-            if random.random() < math.exp(math.e, -1*delta_C/T):
+            if random.random() < math.exp(-1*delta_C/T):
                 C = new_C
             else:
                 #change parameters back
-                cur[v]['team'] = old_team
+                G.nodes[v]['team'] = old_team
                 p[old_team - 1] += 1
                 p[new_team - 1] -= 1
-        return (cur, C, p)
+        #update temp
+        T *= T_dec
+    return G
+#(cur, C, p, T)
 
-#partitions: a list of arrays [number of partitions, p, graph, score]
+#partitions: a list of arrays [number of partitions, p, graph, score, T_start]
 #time_iter: an iterator that returns the ammount of time spent on each recursive step
 #start_time: start time for temp iterator
-def recurse(partitions, depth, t_start, t_func, T_func):
+def recurse(partitions, depth, t_start, t_func, T_dec):
     #run simulated annealing on each partition
-    t_end = t_start + t_func(depth)
+    t_end = math.floor(t_start + t_func(depth))
     for par in partitions:
-        SI = simulated_annealing(par[0], par[1], par[2], t_start, t_end, T_func)
+        SI = simulated_annealing(par[0], par[1], par[2], t_start, t_end, par[4], T_dec)
+        par[4] = SI[3]
     #if this is the last partition, return it
     if len(partitions) == 1:
         return partitions[0][2]
     #remove the lower scoring half of the partitions
     partitions.sort(key=lambda x: x[3])
-    half = partitions[len(partitions)/2:]
+    half = partitions[:len(partitions)//2]
     #recursively call solve until there are no 
-    return recurse(half, depth + 1, t_end, t_func, T_func)
+    return recurse(half, depth + 1, t_end, t_func, T_dec)
 
-def pre_set(G):
-    for v in G:
-        v['team'] = 1
+def pre_set(G, teams):
+    nx.set_node_attributes(G, 1, name='team')
+    for i in range(len(G.nodes)):
+        G.nodes[i]['team'] = (i % teams) + 1
+        
+def find_optomal_team_num(G):
+    G_old = G.copy()
+    pre_set(G_old, 2)
+    S_old = score(G_old)
+    G_new = G.copy()
+    pre_set(G_new, 3)
+    S_new = score(G_new)
+    num = 2
+    i = 4
+    while S_old > S_new:
+        G_old = G_new
+        S_old = S_new
+        G_new = G.copy()
+        pre_set(G_new, i)
+        S_new = score(G_new)
+        num += 1
+        i +=1
+    return num      
+
+def get_p(G, num_teams):
+    p = []
+    for i in range(num_teams):
+        p.append(0)
+    for i in range(len(G.nodes)):
+        p[G.nodes[i]['team'] - 1] += 1
+    return p
+
+#def solve(G: nx.Graph):
+#    num_teams = find_optomal_team_num(G)
+#    pre_set(G, num_teams)
+#    p = get_p(G, num_teams)
+#    result = simulated_annealing(num_teams, p, G, 0, 100000, score(G) * 100000, .7)
+#    return result
+
+#G = read_input('C:/Users/Milo/Documents/cs170/project/inputs/small.in')
+#solve(G)
+#validate_output(G)
+#visualize(G)
+#score(G)
 
 #TESTS
 def generate_test_graphs(nodes, num, dest):   
@@ -268,26 +311,60 @@ def generate_test_graphs(nodes, num, dest):
 #generate_test_graphs(100, 3, 'C:/Users/Milo/Documents/cs170/project/Test_Graphs/Large')        
 
 def sanity_check():
-    G = read_input('C:/Users/Milo/Documents/cs170/project/Test_Graphs/Large/0.in')
-    print('oringinial score is:')
-    print(score(G))
+    G = read_input('C:/Users/Milo/Documents/cs170/project/Test_Graphs/Tiney/0.in')
+    print(find_optomal_team_num(G))
     G1 = G.copy()
-    pre_set(G1)
+    pre_set(G1, 2)
+    OS1 = score(G1)
     G2 = G.copy()
-    pre_set(G2)
+    pre_set(G2, 3)
+    OS2 = score(G2)
     G3 = G.copy()
-    pre_set(G3)
-    partitions = [[2, [10, 0], G1, score(G1)], [3, [10, 0, 0], G2, score(G1)], 
-                  [4, [10, 0, 0, 0]], G3, score(G1)]
-    sol = recurse(partitions, 1, 1, lambda x: 100 * math.exp(2, 1 + .1 * x), 
-                  lambda x: 100 * math.exp(x, -1))
+    pre_set(G3, 4)
+    OS3 = score(G3)
+    G4 = G.copy()
+    pre_set(G4, 5)
+    OS4 = score(G4)
+    G5 = G.copy()
+    pre_set(G5, 6)
+    OS5 = score(G5)
+    G6 = G.copy()
+    pre_set(G6, 7)
+    OS6 = score(G6)
+    print(G1.nodes[0]['team'])
+    print(OS1)
+    print(G2.nodes[0]['team'])
+    print(OS2)
+    print(G3.nodes[0]['team'])
+    print(OS3)
+    print(G4.nodes[0]['team'])
+    print(OS4)
+    print(G5.nodes[0]['team'])
+    print(OS5)
+    print(G6.nodes[0]['team'])
+    print(OS6)
+    partitions = [[2, [10, 0], G1, OS1, OS1], [3, [10, 0, 0], G2, OS2, OS2], 
+                  [4, [10, 0, 0, 0], G3, OS3, OS3], [5, [10, 0, 0, 0, 0], G4, OS4, OS4]]
+    sol = recurse(partitions, 1, 1, lambda x: 100 * 2 ** (1 + .1 * x), .9)
+    print(sol)
+    print(sol.nodes[0]['team'])
     visualize(sol)
     print('score is')
-    score(sol)
+    print(score(sol))
 
-sanity_check()
+def sanity_check_2():
+    G = read_input('C:/Users/Milo/Documents/cs170/project/Test_Graphs/Large/0.in')
+    num_teams = find_optomal_team_num(G)
+    pre_set(G, num_teams)
+    p = get_p(G, num_teams)
+    print('originial socore is')
+    print(score(G))
+    result = simulated_annealing(num_teams, p, G, 100000, score(G) * 100000, .7)
+    print('resulting socore is')
+    print(score(result))
+    
 
-
+#sanity_check_2()
 
 
 
