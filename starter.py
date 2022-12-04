@@ -198,11 +198,11 @@ def update(G: nx.Graph, i, j, v, p, cw):
 
     v_adj = G.neighbors(v)
     for neighbor in v_adj:
-        if G.nodes[v]['team'] == i:
-            cw -= G.edges[v,v_adj]['weight']
-        elif G.nodes[v]['team'] == i:
-            cw += G.edges[v,v_adj]['weight']
-            
+        if G.nodes[neighbor]['team'] == i:
+            cw -= G.edges[v,neighbor]['weight']
+        elif G.nodes[neighbor]['team'] == i:
+            cw += G.edges[v,neighbor]['weight']
+
     return cw+(100*math.exp(0.5*k))+cp
 
 
