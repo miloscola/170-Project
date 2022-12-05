@@ -187,7 +187,7 @@ def update(G: nx.Graph, i, j, v, p, cw):
     #cw is given
 
     k = len(p)
-    b = np.linalg.norm((p / G.number_of_nodes()) - 1 / k, 2)
+    b = np.linalg.norm([(i / G.number_of_nodes()) - 1 / k for i in p], 2)
     
     biold = p[i] / G.number_of_nodes() - (1 / k)
     bjold= p[j] / G.number_of_nodes() - (1 / k )
@@ -364,7 +364,6 @@ def sanity_check():
 def sanity_check_2():
     G = read_input('C:/Users/Milo/Documents/cs170/project/Test_Graphs/Large/0.in')
     num_teams = find_optomal_team_num(G)
-    pre_set(G, num_teams)
     p = get_p(G, num_teams)
     print('originial socore is')
     print(score(G))
@@ -374,6 +373,37 @@ def sanity_check_2():
     
 
 #sanity_check_2()
+
+#7 teams
+def test_update(v, j):
+    G = read_input('C:/Users/Milo/Documents/cs170/project/Test_Graphs/Large/0.in')
+    num_teams = 7
+    pre_set(G, num_teams)
+    cw = score(G)
+    p = get_p(G, num_teams)
+    print(str(G.nodes[v]['team']) + ' -> ' + str(j))
+    update_C = update(G, G.nodes[v]['team'], j, v, p, cw)
+    G.nodes[v]['team'] = j
+    score_C = score(G)
+    print(update_C)
+    print(score_C)
+    
+#test_update(0, 2)
+#test_update(0, 3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
