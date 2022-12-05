@@ -203,7 +203,7 @@ def update(G: nx.Graph, i, j, v, p, cw):
         elif G.nodes[neighbor]['team'] == i:
             cw += G.edges[v,neighbor]['weight']
 
-    return cw+(100*math.exp(0.5*k))+cp
+    return cw+cp
 
 
 #k = number of teams
@@ -227,9 +227,9 @@ def simulated_annealing(k, p, G, t_end, T_start, T_dec):
         #ensure new team is diff from old team
         while new_team == old_team:
             new_team = random.randint(1, k)
-        new_C = score(G)
         p[old_team - 1] -= 1
         p[new_team - 1] += 1
+        new_C = update(G, old_team, new_team, v, p, C)
         G.nodes[v]['team'] = new_team
         delta_C = new_C - C
         if delta_C < 0: 
@@ -373,7 +373,7 @@ def sanity_check_2():
     print(score(result))
     
 
-#sanity_check_2()
+sanity_check_2()
 
 #7 teams
 def test_update(v, j):
