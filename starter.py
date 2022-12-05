@@ -189,12 +189,12 @@ def update(G: nx.Graph, i, j, v, p, cw):
     k = len(p)
     b = np.linalg.norm([(i / G.number_of_nodes()) - 1 / k for i in p], 2)
     
-    biold = p[i] / G.number_of_nodes() - (1 / k)
-    bjold= p[j] / G.number_of_nodes() - (1 / k )
+    biold = p[i - 1] / G.number_of_nodes() - (1 / k)
+    bjold= p[j - 1] / G.number_of_nodes() - (1 / k )
     
     binew = biold - (1/G.number_of_nodes())
     bjnew = bjold - (1/G.number_of_nodes())
-    cp = np.exp(70*math.sqrt((b**2)-(biold**2)-(bjold**2)-(binew**2)-(bjnew**2)))
+    cp = np.exp(70*math.sqrt((b**2)-(biold**2)-(bjold**2)+(binew**2)+(bjnew**2)))
 
     v_adj = G.neighbors(v)
     for neighbor in v_adj:
@@ -227,10 +227,10 @@ def simulated_annealing(k, p, G, t_end, T_start, T_dec):
         #ensure new team is diff from old team
         while new_team == old_team:
             new_team = random.randint(1, k)
+        new_C = score(G)
         p[old_team - 1] -= 1
         p[new_team - 1] += 1
         G.nodes[v]['team'] = new_team
-        new_C = score(G)
         delta_C = new_C - C
         if delta_C < 0: 
             C = new_C
@@ -364,6 +364,7 @@ def sanity_check():
 def sanity_check_2():
     G = read_input('C:/Users/Milo/Documents/cs170/project/Test_Graphs/Large/0.in')
     num_teams = find_optomal_team_num(G)
+    pre_set(G, num_teams)
     p = get_p(G, num_teams)
     print('originial socore is')
     print(score(G))
@@ -376,20 +377,27 @@ def sanity_check_2():
 
 #7 teams
 def test_update(v, j):
-    G = read_input('C:/Users/Milo/Documents/cs170/project/Test_Graphs/Large/0.in')
+    G = read_input('C:/Users/Milo/Documents/cs170/project/inputs/Large2.in')
     num_teams = 7
     pre_set(G, num_teams)
     cw = score(G)
-    p = get_p(G, num_teams)
     print(str(G.nodes[v]['team']) + ' -> ' + str(j))
+    p = get_p(G, num_teams)
+    p[G.nodes[v]['team']-1] -= 1
+    p[j-1] += 1
     update_C = update(G, G.nodes[v]['team'], j, v, p, cw)
     G.nodes[v]['team'] = j
     score_C = score(G)
+    #print(cw)
     print(update_C)
     print(score_C)
     
 #test_update(0, 2)
 #test_update(0, 3)
+#test_update(0, 4)
+#test_update(0, 5)
+#test_update(0, 6)
+#test_update(0, 7)
 
 
 
